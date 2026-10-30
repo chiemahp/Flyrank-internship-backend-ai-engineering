@@ -1,0 +1,14 @@
+Uploads will be additive: each PDF will be validated, stored under an app-managed uploads directory, chunked, and indexed into the existing vector collection. I’m also adding a reproducible local/Docker launch path, repository hygiene, and tests; I’ll avoid inventing report results or institutional submission details.
+
+
+
+The package now includes the upload workflow, Docker files, an explicit submission checklist, and offline tests. The tests pass; I’m doing a final Streamlit startup check and will leave generated databases, user PDFs, and secrets out of the submission files.
+
+
+Prepared the RAG capstone for submission and added PDF uploads.
+
+PDF upload: The Streamlit sidebar accepts PDFs up to 20 MB each, validates them, stores them under docs/uploads/, and adds their chunks to the existing index. Uploads are additive; existing documents aren’t replaced.
+Submission packaging: Added Docker files, secret/runtime-data exclusions, an .env.example, and a final-year submission checklist.
+ZIP archive: Created P7_RAG_Document_QA_submission.zip. The packaging script excludes local PDFs, vector data, databases, virtual environments, and secrets: package_submission.ps1.
+Documentation and tests: Updated the README and added offline unit tests.
+Validation: All 7 unit tests passed, and the Streamlit server returned its page in a local smoke test. I didn’t verify live AI answers because that requires your API key and an actual PDF.

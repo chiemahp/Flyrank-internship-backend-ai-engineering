@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Inventory</title>
+    <style>
+      body { font: 16px/1.5 system-ui, sans-serif; margin: 2rem auto; max-width: 48rem; padding: 0 1rem; }
+      label, input, textarea { display: block; width: 100%; }
+      input, textarea { box-sizing: border-box; margin: .3rem 0 1rem; padding: .6rem; }
+      button { padding: .5rem .8rem; }
+      li { border-top: 1px solid #ddd; padding: 1rem 0; }
+      form.delete { display: inline; }
+    </style>
+  </head>
+  <body>
+    <h1>Inventory</h1>
+    <form method="post" action="/items">
+      <label for="name">Name</label>
+      <input id="name" name="name" minlength="1" maxlength="120" required>
+      <label for="description">Description</label>
+      <textarea id="description" name="description" maxlength="1000"></textarea>
+      <button type="submit">Add item</button>
+    </form>
+    <h2>Items</h2>
+    {% if items %}
+      <ul>
+        {% for item in items %}
+          <li>
+            <strong>{{ item.name }}</strong>
+            <p>{{ item.description }}</p>
+            <form class="delete" method="post" action="/items/{{ item.id }}/delete">
+              <button type="submit">Delete</button>
+            </form>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No items yet.</p>
+    {% endif %}
+  </body>
+</html>

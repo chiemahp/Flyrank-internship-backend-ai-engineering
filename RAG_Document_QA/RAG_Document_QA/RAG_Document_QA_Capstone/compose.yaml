@@ -1,0 +1,15 @@
+services:
+  rag-assistant:
+    build: .
+    ports:
+      - "8501:8501"
+    environment:
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      - rag_documents:/app/docs
+      - rag_vectors:/app/chroma_db
+    restart: unless-stopped
+
+volumes:
+  rag_documents:
+  rag_vectors:
