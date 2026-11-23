@@ -79,7 +79,7 @@ python 03_qa_chain.py
 ```
 
 To run the Streamlit app:
-
+Project demo link:https://drive.google.com/file/d/17XAxQkVzD6MC6JndTVFfAAJh-GYzi70H/view?usp=sharing
 ```bash
 streamlit run streamlit_app.py
 ```
