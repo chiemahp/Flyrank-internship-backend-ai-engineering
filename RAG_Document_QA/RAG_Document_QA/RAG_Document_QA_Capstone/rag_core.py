@@ -7,24 +7,45 @@ import re
 from pathlib import Path
 from typing import Any
 
+from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
+from dotenv import load_dotenv
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import Chroma
 from langchain_core.documents import Document
+from langchain_core.embeddings import Embeddings
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnableLambda
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from langchain_groq import ChatGroq
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pypdf import PdfReader
 from pypdf.errors import PdfReadError
 
 DEFAULT_DOCS_DIR = Path("docs")
 DEFAULT_DB_DIR = Path("chroma_db")
-COLLECTION_NAME = "my_docs"
-EMBEDDING_MODEL = "text-embedding-3-small"
-CHAT_MODEL = "gpt-4o-mini"
+COLLECTION_NAME = "my_docs_groq"
+load_dotenv(Path(__file__).with_name(".env"), override=True)
+CHAT_MODEL = os.getenv(
+    "GROQ_MODEL", "openai/gpt-oss-120b"
+)
 CHUNK_SIZE = 800
 CHUNK_OVERLAP = 100
 MAX_PDF_UPLOAD_BYTES = 20 * 1024 * 1024
+
+
+class ChromaLocalEmbeddings(Embeddings):
+    """Adapt Chroma's bundled local model to LangChain's embeddings interface."""
+
+    def __init__(self) -> None:
+        self._embedding_function = DefaultEmbeddingFunction()
+
+    def embed_documents(self, texts: list[str]) -> list[list[float]]:
+        return [
+            [float(value) for value in embedding]
+            for embedding in self._embedding_function(texts)
+        ]
+
+    def embed_query(self, text: str) -> list[float]:
+        return self.embed_documents([text])[0]
 
 
 def split_documents(
@@ -137,12 +158,10 @@ def index_uploaded_pdf(
 def get_vectorstore(
     persist_directory: Path = DEFAULT_DB_DIR,
 ) -> Chroma:
-    """Open the persistent Chroma collection with the configured embeddings."""
-    if not os.getenv("OPENAI_API_KEY"):
-        raise RuntimeError("OPENAI_API_KEY is not set. Export it before indexing or querying PDFs.")
+    """Open Chroma with its local default embedding function."""
     return Chroma(
         persist_directory=str(persist_directory),
-        embedding_function=OpenAIEmbeddings(model=EMBEDDING_MODEL),
+        embedding_function=ChromaLocalEmbeddings(),
         collection_name=COLLECTION_NAME,
     )
 
@@ -173,6 +192,8 @@ def build_qa_chain(
     persist_directory: Path = DEFAULT_DB_DIR,
 ) -> Any:
     """Build a question-answer chain that returns source documents with answers."""
+    if not os.getenv("GROQ_API_KEY"):
+        raise RuntimeError("GROQ_API_KEY is not set. Export it before querying PDFs.")
     vectorstore = get_vectorstore(persist_directory)
     collection = vectorstore.get(limit=1)
     if not collection.get("ids"):
@@ -196,7 +217,7 @@ def build_qa_chain(
             ("human", "Context:\n{context}\n\nQuestion: {question}"),
         ]
     )
-    llm = ChatOpenAI(model=CHAT_MODEL, temperature=0)
+    llm = ChatGroq(model=CHAT_MODEL, temperature=0)
 
     def format_documents(documents: list[Document]) -> str:
         return "\n\n".join(

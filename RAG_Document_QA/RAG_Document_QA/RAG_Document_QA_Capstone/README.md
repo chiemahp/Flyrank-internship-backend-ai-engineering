@@ -1,12 +1,16 @@
 # Enterprise AI Knowledge Assistant — PDF RAG capstone
 
-A local Retrieval-Augmented Generation (RAG) application that indexes PDF documents in a persistent Chroma vector store, retrieves relevant passages,and answers questions with source-file and page citations. PDFs can be added from the Streamlit sidebar; each upload is added to the existing collection.
+A local Retrieval-Augmented Generation (RAG) application that indexes PDF
+documents in a persistent Chroma vector store, retrieves relevant passages,
+and answers questions with source-file and page citations. PDFs can be added
+from the Streamlit sidebar; each upload is added to the existing collection.
 
 ## Features
 
 - Recursive PDF ingestion and configurable-size text chunking
 - Persistent local Chroma storage with stable chunk IDs
-- OpenAI embeddings and chat completion, configured through environment
+- Groq chat completion with a configurable model
+- Local embeddings through Chroma's default `all-MiniLM-L6-v2` model
 - MMR retrieval and answers grounded in retrieved context
 - Source filename and page citations shown with each answer
 - Additive PDF uploads with filename sanitization, PDF validation, and a 20 MB
@@ -17,12 +21,13 @@ A local Retrieval-Augmented Generation (RAG) application that indexes PDF docume
 ## Requirements
 
 - Python 3.10 or later (the Docker image uses Python 3.12)
-- An OpenAI API key with access to the configured embedding and chat models
+- A Groq API key for answering questions
 - PDFs that you are authorized to process
 
-API calls may incur charges. Document text is sent to the configured model
-provider for embeddings and answers. Do not upload confidential or regulated
-documents unless your organization's policy permits this.
+Question text and retrieved passages are sent to Groq for answers. Embeddings
+are generated locally by Chroma; its embedding model may be downloaded the
+first time it is used. Do not upload confidential or regulated documents
+unless your organization's policy permits this.
 
 ## Local setup (PowerShell)
 
@@ -32,12 +37,13 @@ Run from this project directory:
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-$env:OPENAI_API_KEY = "your-key"
+$env:GROQ_API_KEY = "your-key"
+# Optional: $env:GROQ_MODEL = "openai/gpt-oss-120b"
 ```
 
-Do not commit API keys. `.env.example` is a placeholder template, not an
-automatically loaded environment file. For PowerShell, set the key in the
-current shell as shown above.
+Copy `.env.example` to `.env` and add your Groq key there. The app loads `.env`
+at startup, and `.env` is ignored by Git. Never commit API keys. Alternatively,
+set `GROQ_API_KEY` in the current PowerShell session as shown above.
 
 ## Run
 
@@ -79,9 +85,11 @@ question. Run these commands from this directory so the default `docs/` and
 Set the key in the current PowerShell session, then build and run:
 
 ```powershell
-$env:OPENAI_API_KEY = "your-key"
+$env:GROQ_API_KEY = "your-key"
 docker compose up --build
 ```
+
+Optionally set `GROQ_MODEL` to choose another Groq model.
 
 Open `http://localhost:8501`. Compose mounts named volumes for both uploaded
 PDFs and the vector database, so they persist across container restarts. Stop
@@ -96,7 +104,7 @@ Run the offline unit tests from the project directory:
 python -m unittest discover -s tests -v
 ```
 
-The tests do not call OpenAI. To verify the full application, set a valid API
+The tests do not call Groq. To verify the full application, set a valid API
 key, upload a PDF containing text, and compare returned answers and citations
 with the document itself.
 
@@ -104,14 +112,19 @@ with the document itself.
 
 - Chunk size: 800 characters
 - Chunk overlap: 100 characters
-- Chroma collection: `my_docs`
-- Embedding model: `text-embedding-3-small`
-- Chat model: `gpt-4o-mini`, temperature 0
+- Chroma collection: `my_docs_groq`
+- Embedding model: Chroma's local default, `all-MiniLM-L6-v2`
+- Chat model: `GROQ_MODEL` (default
+  `openai/gpt-oss-120b`), temperature 0
 - Retrieval: Maximal Marginal Relevance, `k=5`, `fetch_k=20`
 
 The model is instructed to answer only from retrieved context and say "I don't
 know" if the context does not provide an answer. Retrieval can still miss
 relevant passages; validate answers and citations against the source PDF.
+
+The Groq collection is separate from the previous OpenAI-embedding collection.
+If you are upgrading an existing installation, run `02_embed_store.py` to
+create the new local-embedding index for all PDFs under `docs/`.
 
 ## Project files
 

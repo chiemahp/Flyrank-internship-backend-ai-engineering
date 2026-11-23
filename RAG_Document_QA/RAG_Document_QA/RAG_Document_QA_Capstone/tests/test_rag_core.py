@@ -5,7 +5,7 @@ import os
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from unittest.mock import Mock, patch
+from unittest.mock import ANY, Mock, patch
 
 from langchain_core.documents import Document
 
@@ -89,10 +89,27 @@ class UploadTests(unittest.TestCase):
 
 
 class ConfigurationTests(unittest.TestCase):
-    def test_vectorstore_requires_api_key(self) -> None:
+    @patch("rag_core.Chroma")
+    def test_vectorstore_uses_local_embeddings_without_groq_api_key(
+        self, chroma: Mock
+    ) -> None:
         with patch.dict(os.environ, {}, clear=True):
-            with self.assertRaisesRegex(RuntimeError, "OPENAI_API_KEY"):
-                rag_core.get_vectorstore()
+            rag_core.get_vectorstore(Path("test_db"))
+
+        chroma.assert_called_once_with(
+            persist_directory="test_db",
+            embedding_function=ANY,
+            collection_name=rag_core.COLLECTION_NAME,
+        )
+        self.assertIsInstance(
+            chroma.call_args.kwargs["embedding_function"],
+            rag_core.ChromaLocalEmbeddings,
+        )
+
+    def test_qa_chain_requires_groq_api_key(self) -> None:
+        with patch.dict(os.environ, {}, clear=True):
+            with self.assertRaisesRegex(RuntimeError, "GROQ_API_KEY"):
+                rag_core.build_qa_chain()
 
 
 if __name__ == "__main__":

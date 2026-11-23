@@ -3,7 +3,6 @@
 from pathlib import Path
 
 import streamlit as st
-from openai import OpenAIError
 
 from rag_core import DEFAULT_DB_DIR, DEFAULT_DOCS_DIR, build_qa_chain, index_uploaded_pdf
 
@@ -45,7 +44,7 @@ with st.sidebar:
                     notices.append(
                         ("success", f"Indexed {source} ({chunk_count} chunks).")
                     )
-                except (ValueError, RuntimeError, OSError, OpenAIError) as exc:
+                except (ValueError, RuntimeError, OSError) as exc:
                     notices.append(
                         ("error", f"Could not index {uploaded_file.name}: {exc}")
                     )
@@ -69,7 +68,7 @@ try:
 except (FileNotFoundError, ValueError, RuntimeError) as exc:
     st.error(str(exc))
     st.info(
-        "Set OPENAI_API_KEY, upload a PDF from the sidebar, or add PDFs under "
+        "Set GROQ_API_KEY, upload a PDF from the sidebar, or add PDFs under "
         "docs/ and run 02_embed_store.py."
     )
     st.stop()
