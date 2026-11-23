@@ -25,7 +25,7 @@ from the Streamlit sidebar; each upload is added to the existing collection.
 - PDFs that you are authorized to process
 
 Question text and retrieved passages are sent to Groq for answers. Embeddings
-are generated locally by Chroma; its embedding model may be downloaded the
+are generated locally by ChromaDB; its embedding model may be downloaded the
 first time it is used. Do not upload confidential or regulated documents
 unless your organization's policy permits this.
 
@@ -104,7 +104,7 @@ Run the offline unit tests from the project directory:
 python -m unittest discover -s tests -v
 ```
 
-The tests do not call Groq. To verify the full application, set a valid API
+To verify the full application, set a valid API
 key, upload a PDF containing text, and compare returned answers and citations
 with the document itself.
 
@@ -122,9 +122,7 @@ The model is instructed to answer only from retrieved context and say "I don't
 know" if the context does not provide an answer. Retrieval can still miss
 relevant passages; validate answers and citations against the source PDF.
 
-The Groq collection is separate from the previous OpenAI-embedding collection.
-If you are upgrading an existing installation, run `02_embed_store.py` to
-create the new local-embedding index for all PDFs under `docs/`.
+
 
 ## Project files
 
